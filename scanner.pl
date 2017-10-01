@@ -54,6 +54,7 @@ while (my $line = <CONFIG>) {
 		}
     }
 }
+write_header();
 
 sub ping {
 	if ($net->ping($_[0], $time_out)) {
@@ -144,6 +145,15 @@ sub calcSubnet {
 			}
 		}
 	}
+}
+
+sub write_header {
+	open(my $cfh, '>', 'config_filelist');
+	print $cfh "==========\n";
+	my $datetime = localtime();
+	print $cfh "Create at $datetime\n";
+	print $cfh "==========\n";
+	close $cfh;
 }
 
 print "Press any key";
