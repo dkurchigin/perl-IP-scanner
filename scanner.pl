@@ -4,7 +4,9 @@ use strict;
 use Net::Ping;
 
 my $config_file = "ip_list";
+my $out_file = $config_file . ".out";
 
+my $scanning_time = 1;
 my $time_out = 3; 
 my $show_connected = 1;
 my $show_disconnected = 1;
@@ -50,7 +52,7 @@ while (my $line = <CONFIG>) {
             my ($subnet, $bitmask) = split(/\//, $address);
 			calcSubnet($subnet, $bitmask, $description);
         } else {
-			ping($address, $description);
+			ping($address, $description, 1);
 		}
     }
 }
@@ -59,10 +61,20 @@ write_header();
 sub ping {
 	if ($net->ping($_[0], $time_out)) {
 		if ($show_connected == 1) {
+			if ($_[2] == 1) {
+				open(my $cfh, '>>', $out_file);
+        			print $cfh "$_[0]($_[1])\t now is UP\n";
+        			close $cfh;
+			}
 			print "$_[0]($_[1])\t now is UP\n";
 		}
     } else {
 		if ($show_disconnected == 1) {
+			if ($_[2] == 1) {
+                                open(my $cfh, '>>', $out_file);
+                                print $cfh "$_[0]($_[1])\t now is DOWN\n";
+                                close $cfh;
+                        }
 			print "$_[0]($_[1])\t now is DOWN\n";
 		}
 	}
@@ -156,6 +168,6 @@ sub write_header {
 	close $cfh;
 }
 
-print "Press any key";
+print "Press any key\n";
 my $goodbye = <STDIN>;
-print "Bye";
+print "Bye\n";
