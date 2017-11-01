@@ -4,7 +4,8 @@ use strict;
 use Net::Ping;
 
 my $config_file = "ip_list";
-my $out_file = $config_file . ".out";
+my $out_config = $config_file . ".out";
+my $temp_file = $config_file . ".temp";
 
 my $scanning_time = 1;
 my $time_out = 3; 
@@ -16,7 +17,8 @@ my $view = @ARGV;
 
 #parsing the list of parameters
 for (my $i=0; $i <= $#ARGV; $i++) {
-    my ($command, $value) = split(/=/, $ARGV[$i]); 
+    my ($command, $value) = split(/=/, $ARGV[$i]);
+ 
     #change viev-mod for addresses
     if ($command eq "-v") {
         if ($value eq "only_up") {
@@ -29,6 +31,7 @@ for (my $i=0; $i <= $#ARGV; $i++) {
 	        print "Unknown argument for -v option\n";
 	    }
     }
+
     #change path to config
     if ($command eq "-c") {
         $config_file = $value;
@@ -39,9 +42,12 @@ for (my $i=0; $i <= $#ARGV; $i++) {
     }
 }
 
+write_header($temp_file);
+
 #hash for the address list
 open(CONFIG, $config_file) or die "Can't open file - $config_file!\n";
 my $net = Net::Ping->new("icmp");
+
 #read line by line
 while (my $line = <CONFIG>) {
     #ignore lines with comments
@@ -56,24 +62,23 @@ while (my $line = <CONFIG>) {
 		}
     }
 }
-write_header();
 
 sub ping {
 	if ($net->ping($_[0], $time_out)) {
 		if ($show_connected == 1) {
 			if ($_[2] == 1) {
-				open(my $cfh, '>>', $out_file);
-        			print $cfh "$_[0]($_[1])\t now is UP\n";
-        			close $cfh;
+				open(my $tfh, '>>', $temp_file);
+        			print $tfh "$_[0]($_[1])\t now is UP\n";
+        			close $tfh;
 			}
 			print "$_[0]($_[1])\t now is UP\n";
 		}
     } else {
 		if ($show_disconnected == 1) {
 			if ($_[2] == 1) {
-                                open(my $cfh, '>>', $out_file);
-                                print $cfh "$_[0]($_[1])\t now is DOWN\n";
-                                close $cfh;
+                                open(my $tfh, '>>', $temp_file);
+                                print $tfh "$_[0]($_[1])\t now is DOWN\n";
+                                close $tfh;
                         }
 			print "$_[0]($_[1])\t now is DOWN\n";
 		}
@@ -160,14 +165,12 @@ sub calcSubnet {
 }
 
 sub write_header {
-	open(my $cfh, '>', 'config_filelist');
-	print $cfh "==========\n";
+	open(my $fh, '>', $_[0]);
+	print $fh "==========\n";
 	my $datetime = localtime();
-	print $cfh "Create at $datetime\n";
-	print $cfh "==========\n";
-	close $cfh;
+	print $fh "Create at $datetime\n";
+	print $fh "==========\n";
+	close $fh;
 }
 
-print "Press any key\n";
-my $goodbye = <STDIN>;
-print "Bye\n";
+rename "$temp_file", "$out_config";
